@@ -1,0 +1,6 @@
+euclid3==0.1
+numpy==1.15.4
+pygcode==0.2.1
+PyQt5==5.11.3
+PyQt5-sip==4.19.13
+six==1.12.0

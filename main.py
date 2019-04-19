@@ -1,11 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
-
+import os
 
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QTextEdit
 from copy import copy
 import numpy as np
-from pygcode import Line, GCodeLinearMove, GCodeRapidMove
+from pygcode import Line, GCodeLinearMove, GCodeRapidMove, Word
+
+
+class GCodePoint:
+    def __init__(self, point, gcode_line):
+        self._point = point  # list
+        self._gcode_line = gcode_line  # string
+
+    @property
+    def point(self):
+        return self._point
+
+    @point.setter
+    def point(self, point):
+        self._point = point
+
+    @property
+    def gcode_line(self):
+        return self._gcode_line
+
+    @gcode_line.setter
+    def gcode_line(self, gcode_line):
+        self._gcode_line = gcode_line
 
 
 class LineSolverApp:
@@ -14,14 +36,7 @@ class LineSolverApp:
 
         self.file_name = None
 
-        self.previous_pos = [0, 0, 0]
-        self.current_pos = [0, 0, 0]
-        self.new_pos = [0, 0, 0]
-
-        self.first_point = [0, 0, 0]
-        self.second_point = [0, 0, 0]
-        self.third_point = [0, 0, 0]
-
+        self.result_vector = list()
         self.app = QApplication([])
 
         self.window = QWidget()
@@ -70,71 +85,114 @@ class LineSolverApp:
             self.work_button.setEnabled(True)
             self.log_display.append("file loaded.")
 
-    def on_work_clicked(self):
+    def save_point(self, point):
+        self.result_vector.append(point)
 
-        with open(self.file_name, 'r') as f:
+    def log_gcode_point_vector(self, vector):
+        for point in vector:
+            point_to_save = point.point
+            string_to_save = 'X{} Y{} Z{}'.format(point_to_save[0], point_to_save[1], point_to_save[2])
+            self.log_display.append(string_to_save + ' | ' + point.gcode_line)
+
+    @staticmethod
+    def update_gcode_coord(coord_word, coord_word_pre):
+        if coord_word is None:
+            return coord_word_pre, coord_word_pre
+        else:
+            return coord_word, coord_word
+
+    @staticmethod
+    def save_gcode_point_vector(vector, file_name):
+        file_name = 'mod_' + os.path.basename(file_name)
+        with open(file_name, 'w') as f:
+            for point in vector:
+                f.write(point.gcode_line + '\n')
+
+    def parse_gcode_file(self, file_name):
+        vector = []
+
+        with open(file_name, 'r') as f:
+            x_word_pre = Word('X0')
+            y_word_pre = Word('Y0')
+            z_word_pre = Word('Z0')
+
             for line_text in f.readlines():
                 line = Line(line_text)
 
                 self.log_display.append("GCODE = {}\n".format(str(line.block)))
 
-                # if len(line.block.gcodes):
-                #     if isinstance(line.block.gcodes[0],
-                #                   GCodeLinearMove) or isinstance(line.block.gcodes[0],
-                #                                                  GCodeRapidMove):
-
                 x_word = line.block.X
                 y_word = line.block.Y
                 z_word = line.block.Z
 
-                if x_word is None:
-                    self.current_pos[0] = self.previous_pos[0]
-                    self.third_point[0] = self.previous_pos[0]
-                else:
-                    self.current_pos[0] = x_word.value
-                    self.third_point[0] = x_word.value
+                if x_word is None and y_word is None and z_word is None:
+                    continue
 
-                if y_word is None:
-                    self.current_pos[1] = self.previous_pos[1]
-                    self.third_point[1] = self.previous_pos[1]
-                else:
-                    self.current_pos[1] = y_word.value
-                    self.third_point[1] = y_word.value
+                x_word, x_word_pre = self.update_gcode_coord(x_word, x_word_pre)
+                y_word, y_word_pre = self.update_gcode_coord(y_word, y_word_pre)
+                z_word, z_word_pre = self.update_gcode_coord(z_word, z_word_pre)
 
-                if z_word is None:
-                    self.current_pos[2] = self.previous_pos[2]
-                    self.third_point[2] = self.previous_pos[2]
-                else:
-                    self.current_pos[2] = z_word.value
-                    self.third_point[2] = z_word.value
+                point = [x_word.value, y_word.value, z_word.value]
+                self.log_display.append('parse point {}'.format(point))
 
-                # print("previous:\t", self.previous_pos)
-                # print("current:\t", self.current_pos)
-                # print()
+                vector.append(GCodePoint(point, str(line.block)))
 
-                self.log_display.append(
-                    "first point =\t{}\nsecond point =\t{}\nthird point =\t{}".format(self.first_point,
-                                                                                      self.second_point,
-                                                                                      self.third_point)
-                )
+        return vector
 
-                self.first_point = copy(self.previous_pos)
-                self.second_point = copy(self.current_pos)
+    @staticmethod
+    def get_point_from_vector(vector, index):
+        return vector[index-2], vector[index-1], vector[index]
 
-                self.previous_pos = copy(self.current_pos)
+    def on_work_clicked(self):
+        vector = self.parse_gcode_file(self.file_name)
 
-                if not self.check_point(self.first_point, self.second_point, self.third_point):
-                    self.log_display.append("Hurray!\n\n###################################\n")
-                else:
-                    self.log_display.append("xusta\n\n###################################\n")
+        index = 2
+        p1, p2, p3 = self.get_point_from_vector(vector, index)
+        self.save_point(p1)
+
+        for index in range(3, len(vector), 1):
+            if self.check_point(p1.point, p2.point, p3.point):
+                p3 = vector[index]
+            else:
+                self.save_point(vector[index-2])
+                p1, p2, p3 = self.get_point_from_vector(vector, index)
+
+        self.save_point(vector[len(vector) - 2])
+        self.save_point(vector[len(vector) - 1])
+        self.log_gcode_point_vector(self.result_vector)
+        self.save_gcode_point_vector(self.result_vector, 'mod_' + self.file_name)
 
     def check_point(self, p1, p2, cp):
 
-        d = np.array(p1) - np.array(p2)
+        d = np.array(p2) - np.array(p1)
 
         l, m, n = d
         x1, y1, z1 = p1
         x, y, z = np.array(cp)
+
+        if l == 0:
+            if x != x1:
+                return False
+            elif n * y - n * y1 == m * z - m * z1:
+                return True
+            else:
+                return False
+
+        if m == 0:
+            if y != y1:
+                return False
+            elif n * x - n * x1 == l * z - l * z1:
+                return True
+            else:
+                return False
+
+        if n == 0:
+            if z != z1:
+                return False
+            elif m * x - m * x1 == l * y - l * y1:
+                return True
+            else:
+                return False
 
         if (n * y - m * z + (m * z1 - n * y1)) == 0 and (m * x - l * y + (l * y1 - m * x1)) == 0:
             return True

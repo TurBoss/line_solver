@@ -3,7 +3,6 @@
 import os
 
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QTextEdit
-from copy import copy
 import numpy as np
 from pygcode import Line, GCodeLinearMove, GCodeRapidMove, Word
 

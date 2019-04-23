@@ -9,7 +9,7 @@ from pygcode import Line, GCodeLinearMove, GCodeRapidMove, Word
 
 
 ffi = cffi.FFI()
-ffi.cdef("void cffi_check_point(double *p1, double *p2, double *p3);")
+ffi.cdef("bool cffi_check_point(double *p1, double *p2, double *p3);")
 C = ffi.dlopen("./liblinesolver.so")
 
 

@@ -3,7 +3,7 @@
 import os
 import cffi
 
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QTextEdit
+from qtpy.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QTextEdit
 import numpy as np
 from pygcode import Line, GCodeLinearMove, GCodeRapidMove, Word
 
@@ -174,9 +174,11 @@ class LineSolverApp:
         self.save_gcode_point_vector(self.result_vector, 'mod_' + self.file_name)
 
     def check_point(self, p1, p2, cp):
-        C.cffi_check_point(p1, p2, cp)
+        result = C.cffi_check_point(p1, p2, cp)
+        print(result)
+        return result
 
-    def check_point_orig(self, p1, p2, cp):
+    def check_point_origin(self, p1, p2, cp):
 
         d = np.array(p2) - np.array(p1)
 
@@ -221,7 +223,7 @@ class LineSolverApp:
 
         b = ([0, 0, 1],
              [0, 0, 2],
-             [0, 0.1, 6])
+             [0, 0, 6])
 
         self.log_display.append(str(a))
 

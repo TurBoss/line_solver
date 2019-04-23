@@ -1,70 +1,83 @@
 #include <iostream>
+#include <algorithm>
 #include <vector>
-#include <array>
+#include <iterator>
 
-using namespace std;
-
-bool check_point(double *p1, double *p2, double *cp)
+bool check_point(float *p1, float *p2, float *cp)
 {
-    return true;
-//    <vector>d = <vector>p2 - <vector>p1;
 
-//    l, m, n = d;
+    std::vector<float> point1 {p1[0], p1[1], p1[2]};
+    std::vector<float> point2 {p2[0], p2[1], p2[2]};
+    std::vector<float> d;
 
-//    double x1 = p1[0];
-//    double y1 = p1[1];
-//    double z1 = p1[2];
+    std::set_difference(
+        point1.begin(), point1.end(),
+        point2.begin(), point2.end(),
+        std::back_inserter( d )
+    );
 
-//    x, y, z = np.array(cp);
+    float l = d[0];
+    float m = d[1];
+    float n = d[2];
 
-//    if (l == 0){
-//        if (x != x1){
-//            return false;
-//        }
-//        else if (n * y - n * y1 == m * z - m * z1){
-//            return true;
-//        }
-//        else{
-//            return false;
-//        }
-//    }
+    float x1 = p1[0];
+    float y1 = p1[1];
+    float z1 = p1[2];
 
-//    if (m == 0) {
-//        if (y != y1) {
-//            return false;
-//        }
-//        else if(n * x - n * x1 == l * z - l * z1){
-//            return true;
-//        }
-//        else{
-//            return false;
-//        }
-//    }
+    std::vector<float> cpoint {cp[0], cp[1], cp[2]};
 
-//    if (n == 0) {
-//        if (z != z1){
-//            return false;
-//        }
-//        else if (m * x - m * x1 == l * y - l * y1){
-//            return true;
-//        }
-//        else{
-//            return false;
-//        }
-//    }
+    float x = cpoint[0];
+    float y = cpoint[1];
+    float z = cpoint[2];
 
-//    if ((n * y - m * z + (m * z1 - n * y1)) == 0 and (m * x - l * y + (l * y1 - m * x1)) == 0){
-//        return true;
-//    }
+    if (l == 0){
+        if (x != x1){
+            return false;
+        }
+        else if (n * y - n * y1 == m * z - m * z1){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
 
-//    else{
-//        return false;
-//    }
+    if (m == 0) {
+        if (y != y1) {
+            return false;
+        }
+        else if(n * x - n * x1 == l * z - l * z1){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    if (n == 0) {
+        if (z != z1){
+            return false;
+        }
+        else if (m * x - m * x1 == l * y - l * y1){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    if ((n * y - m * z + (m * z1 - n * y1)) == 0 and (m * x - l * y + (l * y1 - m * x1)) == 0){
+        return true;
+    }
+
+    else{
+        return false;
+    }
 }
 
 extern "C"
 {
-    extern bool cffi_check_point(double *p1, double *p2, double *cp)
+    extern bool cffi_check_point(float *p1, float *p2, float *cp)
     {
         return check_point(p1, p2, cp);
     }

@@ -221,13 +221,13 @@ class LineSolverApp:
              [81.906, -315.75, -0.965],
              [82.006, -315.75, -0.965])
 
-        b = ([0, 0, 1],
-             [0, 0, 2],
-             [0, 0, 6])
+        b = ([0.0, 0.0, 1.0],
+             [0.0, 0.0, 2.0],
+             [0.0, 0.0, 6.0])
 
         self.log_display.append(str(a))
 
-        if self.check_point(a[0], a[1], a[2]):  # Fixme: should return false
+        if self.check_point(a[0], a[1], a[2]):
             self.log_display.append("TEST OK")
         else:
             self.log_display.append("TEST NO")

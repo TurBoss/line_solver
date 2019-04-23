@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 import os
+import cffi
 
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QTextEdit
 import numpy as np
 from pygcode import Line, GCodeLinearMove, GCodeRapidMove, Word
+
+
+ffi = cffi.FFI()
+ffi.cdef("void cffi_check_point(double *p1, double *p2, double *p3);")
+C = ffi.dlopen("./liblinesolver.so")
 
 
 class GCodePoint:
@@ -67,8 +73,6 @@ class LineSolverApp:
         self.window.setLayout(self.layout)
 
     def exec(self):
-
-        self.test()
         self.window.show()
         self.app.exec_()
 
@@ -90,8 +94,11 @@ class LineSolverApp:
     def log_gcode_point_vector(self, vector):
         for point in vector:
             point_to_save = point.point
-            string_to_save = 'X{} Y{} Z{}'.format(point_to_save[0], point_to_save[1], point_to_save[2])
-            self.log_display.append(string_to_save + ' | ' + point.gcode_line)
+            if point_to_save:
+                string_to_save = 'X{} Y{} Z{}'.format(point_to_save[0], point_to_save[1], point_to_save[2])
+                self.log_display.append(string_to_save + ' | ' + point.gcode_line)
+            else:
+                self.log_display.append(point.gcode_line)
 
     @staticmethod
     def update_gcode_coord(coord_word, coord_word_pre):
@@ -125,6 +132,7 @@ class LineSolverApp:
                 z_word = line.block.Z
 
                 if x_word is None and y_word is None and z_word is None:
+                    vector.append(GCodePoint(None, str(line.block)))
                     continue
 
                 x_word, x_word_pre = self.update_gcode_coord(x_word, x_word_pre)
@@ -150,6 +158,10 @@ class LineSolverApp:
         self.save_point(p1)
 
         for index in range(3, len(vector), 1):
+
+            if p1.point is None and p2.point is None and p3.point is None:
+                self.save_point(vector[len(vector) - 1])
+
             if self.check_point(p1.point, p2.point, p3.point):
                 p3 = vector[index]
             else:
@@ -162,6 +174,9 @@ class LineSolverApp:
         self.save_gcode_point_vector(self.result_vector, 'mod_' + self.file_name)
 
     def check_point(self, p1, p2, cp):
+        C.cffi_check_point(p1, p2, cp)
+
+    def check_point_orig(self, p1, p2, cp):
 
         d = np.array(p2) - np.array(p1)
 
@@ -225,6 +240,7 @@ class LineSolverApp:
 
 def main():
     line_solver = LineSolverApp()
+    line_solver.test()
     line_solver.exec()
 
 

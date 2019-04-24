@@ -72,6 +72,8 @@ class LineSolverApp:
 
         self.window.setLayout(self.layout)
 
+        # self.test()
+
     def exec(self):
         self.window.show()
         self.app.exec_()
@@ -125,24 +127,27 @@ class LineSolverApp:
             for line_text in f.readlines():
                 line = Line(line_text)
 
-                self.log_display.append("GCODE = {}\n".format(str(line.block)))
+                self.log_display.append("GCODE = {}".format(str(line.block)))
 
-                x_word = line.block.X
-                y_word = line.block.Y
-                z_word = line.block.Z
+                if len(line.block.gcodes):
+                    if isinstance(line.block.gcodes[0], GCodeLinearMove):
 
-                if x_word is None and y_word is None and z_word is None:
-                    vector.append(GCodePoint(None, str(line.block)))
-                    continue
+                        x_word = line.block.X
+                        y_word = line.block.Y
+                        z_word = line.block.Z
 
-                x_word, x_word_pre = self.update_gcode_coord(x_word, x_word_pre)
-                y_word, y_word_pre = self.update_gcode_coord(y_word, y_word_pre)
-                z_word, z_word_pre = self.update_gcode_coord(z_word, z_word_pre)
+                        if x_word is None and y_word is None and z_word is None:
+                            vector.append(GCodePoint(None, str(line.block)))
+                            continue
 
-                point = [x_word.value, y_word.value, z_word.value]
-                self.log_display.append('parse point {}'.format(point))
+                        x_word, x_word_pre = self.update_gcode_coord(x_word, x_word_pre)
+                        y_word, y_word_pre = self.update_gcode_coord(y_word, y_word_pre)
+                        z_word, z_word_pre = self.update_gcode_coord(z_word, z_word_pre)
 
-                vector.append(GCodePoint(point, str(line.block)))
+                        point = [x_word.value, y_word.value, z_word.value]
+                        self.log_display.append('parse point {}'.format(point))
+
+                        vector.append(GCodePoint(point, str(line.block)))
 
         return vector
 
@@ -175,7 +180,6 @@ class LineSolverApp:
 
     def check_point(self, p1, p2, cp):
         result = C.cffi_check_point(p1, p2, cp)
-        print(result)
         return result
 
     def check_point_origin(self, p1, p2, cp):
@@ -242,7 +246,6 @@ class LineSolverApp:
 
 def main():
     line_solver = LineSolverApp()
-    line_solver.test()
     line_solver.exec()
 
 

@@ -3,17 +3,19 @@
 #include <vector>
 #include <iterator>
 
-bool check_point(float *p1, float *p2, float *cp)
-{
+
+
+
+bool check_point(float *p1, float *p2, float *cp) {
 
     std::vector<float> point1 {p1[0], p1[1], p1[2]};
     std::vector<float> point2 {p2[0], p2[1], p2[2]};
     std::vector<float> d;
 
     std::set_difference(
-        point1.begin(), point1.end(),
         point2.begin(), point2.end(),
-        std::back_inserter( d )
+        point1.begin(), point1.end(),
+        std::back_inserter(d)
     );
 
     float l = d[0];
@@ -69,16 +71,24 @@ bool check_point(float *p1, float *p2, float *cp)
     if ((n * y - m * z + (m * z1 - n * y1)) == 0 and (m * x - l * y + (l * y1 - m * x1)) == 0){
         return true;
     }
-
     else{
         return false;
     }
 }
 
-extern "C"
-{
-    extern bool cffi_check_point(float *p1, float *p2, float *cp)
-    {
+int main() {
+
+    float p1[3] = {0.0, 0.0, 4.0};
+    float p2[3] = {0.0, 0.0, 2.0};
+    float cp[3] = {0.0, 0.0, 3.0};
+
+    printf("Result = %d", check_point(p1, p2, cp));
+
+    return 0;
+}
+
+extern "C" {
+    extern bool cffi_check_point(float *p1, float *p2, float *cp) {
         return check_point(p1, p2, cp);
     }
 }

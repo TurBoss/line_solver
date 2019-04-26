@@ -60,3 +60,9 @@ target/
 \.idea/
 
 venv/
+
+main
+
+*.ngc
+
+*.tap
